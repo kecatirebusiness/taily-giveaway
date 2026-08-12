@@ -77,7 +77,29 @@
     font-size:10.5px;font-weight:600;letter-spacing:.2em;
     text-transform:uppercase;color:var(--muted);white-space:nowrap;
   }
+  .sublabel{
+    display:flex;align-items:center;gap:10px;margin:0 0 11px;
+  }
+  .sublabel::after{content:"";flex:1;height:1px;background:var(--line);}
+  .sublabel span{
+    font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:#fff;background:var(--blue);border-radius:999px;padding:4px 10px;white-space:nowrap;
+  }
+  .sublabel.small span{background:var(--coat-pink,#F6C8D8);color:#8A3D5C;}
+  .block + .block{margin-top:20px;}
+
   .grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+
+  /* premio diario: fila horizontal, se distingue del bloque grande de un vistazo */
+  .daily{
+    display:flex;align-items:center;gap:14px;
+    padding:12px 14px;border:1px solid rgba(21,93,215,.10);border-radius:16px;
+    box-shadow:0 4px 14px rgba(11,55,133,.06);
+  }
+  .daily .tile{width:66px;flex:0 0 66px;aspect-ratio:1/1;border-radius:14px;box-shadow:none;}
+  .daily .tile::after{left:26%;right:26%;bottom:13%;height:6px;}
+  .daily .dtx b{display:block;font-size:15px;font-weight:700;line-height:1.25;}
+  .daily .dtx span{display:block;margin-top:2px;font-size:12.5px;color:var(--muted);}
   .prize{
     flex:1 1 0;min-width:118px;max-width:152px;text-align:center;
   }
@@ -217,7 +239,16 @@
 
   <div class="prizes">
     <p class="plabel"><span id="prizeTitle">What you can win</span></p>
-    <div class="grid" id="prizeList"></div>
+
+    <div class="block">
+      <p class="sublabel"><span id="grandLabel">Grand prize</span></p>
+      <div class="grid" id="prizeList"></div>
+    </div>
+
+    <div class="block" id="dailyBlock" hidden>
+      <p class="sublabel small"><span>Daily prize</span></p>
+      <div class="daily" id="dailyPrize"></div>
+    </div>
   </div>
 
   <form id="form" novalidate>
@@ -286,11 +317,16 @@ const GIVEAWAY = {
   headline:  "enter to <em>win</em>",    // <em> = la palabra en italica serif
   subline:   "Free to enter, takes ten seconds. We pick a winner and email them directly.",
   closes:    "",                         // ej "Closes Friday at midnight". Vacio = no se muestra
+  // PREMIO GRANDE: esto es lo que cambia de un dia al otro
   prizes: [
     { art:"rayban",     name:"Ray-Ban Meta Glasses", note:"Camera and audio built in" },
     { art:"airpodsmax", name:"AirPods Max",          note:"Noise cancelling" },
     { art:"ipad",       name:"iPad",                 note:"Latest generation" }
-  ]
+  ],
+
+  // PREMIO CHICO: el mismo TODOS los dias, no hace falta tocarlo.
+  // Poner null si algun dia no va premio diario.
+  dailyPrize: { art:"airpods", name:"AirPods", note:"One winner every single day" }
 };
 
 /* URL del Google Apps Script (ver SETUP.md paso 4). Tiene que terminar en /exec */
@@ -354,13 +390,22 @@ const ART = {
     <rect x="86" y="50" width="4" height="11" rx="2" fill="#9AA3B4"/>
   </svg>`,
 
-  airpods: `<svg viewBox="0 0 120 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="22" y="34" width="76" height="58" rx="17" fill="#E4E7EC"/>
-    <path d="M22 51 C22 41 30 34 39 34 H81 C90 34 98 41 98 51 Z" fill="#F2F4F7"/>
-    <rect x="22" y="49" width="76" height="2.5" fill="#C7CCD6"/>
-    <circle cx="60" cy="62" r="3" fill="#B9BFCA"/>
-    <path d="M45 8 C52 8 55 13 54 20 L52 30 C51 34 47 35 44 33 C40 31 39 26 40 20 C41 12 40 8 45 8 Z" fill="#F7F8FA"/>
-    <path d="M75 8 C68 8 65 13 66 20 L68 30 C69 34 73 35 76 33 C80 31 81 26 80 20 C79 12 80 8 75 8 Z" fill="#EDEFF3"/>
+  airpods: `<svg viewBox="0 0 120 112" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="40.5" y="26" width="9" height="32" rx="4.5" fill="#98A2B2"/>
+    <rect x="42" y="27.5" width="6" height="29" rx="3" fill="#FCFDFE"/>
+    <circle cx="45" cy="26" r="11" fill="#98A2B2"/>
+    <circle cx="45" cy="26" r="9.4" fill="#FCFDFE"/>
+    <circle cx="42.5" cy="23" r="3" fill="#E7EAF0"/>
+    <rect x="70.5" y="26" width="9" height="32" rx="4.5" fill="#98A2B2"/>
+    <rect x="72" y="27.5" width="6" height="29" rx="3" fill="#FCFDFE"/>
+    <circle cx="75" cy="26" r="11" fill="#98A2B2"/>
+    <circle cx="75" cy="26" r="9.4" fill="#FCFDFE"/>
+    <circle cx="72.5" cy="23" r="3" fill="#E7EAF0"/>
+    <rect x="20" y="52" width="80" height="53" rx="17" fill="#98A2B2"/>
+    <rect x="21.6" y="53.6" width="76.8" height="49.8" rx="15.5" fill="#F1F3F7"/>
+    <rect x="21.6" y="67" width="76.8" height="2.6" fill="#C2C8D3"/>
+    <rect x="26" y="58" width="12" height="40" rx="6" fill="#fff" opacity=".7"/>
+    <circle cx="60" cy="60" r="2.8" fill="#5FC98A"/>
   </svg>`,
 
   gift: `<svg viewBox="0 0 120 116" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -375,7 +420,7 @@ const ART = {
 /* ancho de cada dibujo dentro de su baldosa, para que todos pesen igual a la vista
    (los lentes son anchos y bajos, el iPad alto y angosto: sin esto uno se come al otro) */
 const SCALE = {
-  rayban:82, airpodsmax:74, ipad:52, iphone:30, watch:60, airpods:70, gift:64
+  rayban:82, airpodsmax:74, ipad:52, iphone:30, watch:60, airpods:76, gift:64
 };
 
 /* tintes de fondo de cada baldosa, rotan en orden */
@@ -388,20 +433,30 @@ const TINTS = ['#EAF1FE', '#FDF0F5', '#FBF4EA', '#EDF6F1'];
   document.getElementById('headline').innerHTML   = GIVEAWAY.headline;
   document.getElementById('subline').textContent  = GIVEAWAY.subline;
 
-  document.getElementById('prizeTitle').textContent =
-    GIVEAWAY.prizes.length > 1 ? 'What you can win' : 'The prize';
+  document.getElementById('prizeTitle').textContent = 'What you can win';
+  document.getElementById('grandLabel').textContent =
+    GIVEAWAY.prizes.length > 1 ? 'Grand prize' : 'Grand prize';
 
-  document.getElementById('prizeList').innerHTML = GIVEAWAY.prizes.map((p, i) => {
-    const tint = TINTS[i % TINTS.length];
-    const bg = `radial-gradient(115% 90% at 50% 4%, #fff 0%, ${tint} 68%)`;
-    return `
-    <div class="prize">
-      <div class="tile" style="background:${bg}">
+  const tile = (p, i) => {
+    const bg = `radial-gradient(115% 90% at 50% 4%, #fff 0%, ${TINTS[i % TINTS.length]} 68%)`;
+    return `<div class="tile" style="background:${bg}">
         <div class="art" style="width:${SCALE[p.art] || 64}%">${ART[p.art] || ART.gift}</div>
-      </div>
+      </div>`;
+  };
+
+  document.getElementById('prizeList').innerHTML = GIVEAWAY.prizes.map((p, i) => `
+    <div class="prize">
+      ${tile(p, i)}
       <b>${p.name}</b>${p.note ? `<span>${p.note}</span>` : ''}
-    </div>`;
-  }).join('');
+    </div>`).join('');
+
+  // el premio diario es siempre el mismo, va en su propio bloque
+  if (GIVEAWAY.dailyPrize) {
+    const d = GIVEAWAY.dailyPrize;
+    document.getElementById('dailyPrize').innerHTML =
+      `${tile(d, 1)}<div class="dtx"><b>${d.name}</b>${d.note ? `<span>${d.note}</span>` : ''}</div>`;
+    document.getElementById('dailyBlock').hidden = false;
+  }
 
   if (GIVEAWAY.closes) {
     document.getElementById('footnote').innerHTML =
@@ -535,7 +590,8 @@ form.addEventListener('submit', async (e) => {
     name, email, role,
     code,
     giveaway: GIVEAWAY.id,
-    prizes:   GIVEAWAY.prizes.map(p => p.name).join(', '),
+    prizes:   GIVEAWAY.prizes.map(p => p.name).join(', ') +
+              (GIVEAWAY.dailyPrize ? ` + ${GIVEAWAY.dailyPrize.name} (daily)` : ''),
     source:   location.hostname || 'local'
   }).toString();
 
