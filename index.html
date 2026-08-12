@@ -410,23 +410,37 @@ const TINTS = ['#EAF1FE', '#FDF0F5', '#FBF4EA', '#EDF6F1'];
 
 /* ==================================================================
    4. NUMERO DE ENTRADA
-   Se arma en el navegador (el envio es fire-and-forget, el servidor no
-   puede devolvernos nada) y viaja junto con los datos, asi que el mismo
-   numero que ve la persona en pantalla queda escrito en el Sheet.
-   Alfabeto sin I, L, O, 0 ni 1: en una captura de pantalla esos se
-   confunden entre si y despues no podes verificar a nadie.
+   Se DERIVA del email + el sorteo, no se sortea al azar. Es a proposito:
+   si fuera aleatorio, alguien que entra dos veces veria un numero nuevo en
+   pantalla mientras el Sheet conserva el primero (el anti duplicado no
+   agrega la segunda fila), y esa persona terminaria con una captura de un
+   codigo que no existe en ninguna parte. Derivandolo, el mismo email
+   siempre muestra el mismo numero, en cualquier navegador y cuantas veces
+   sea, y siempre coincide con el que quedo guardado.
+   Alfabeto sin I, L, O, 0 ni 1: en una captura esos se confunden entre si.
    ================================================================== */
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-function makeEntryCode() {
-  const pick = n => Array.from({length:n}, () =>
-    ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+function makeEntryCode(email, giveawayId) {
+  // FNV-1a de 32 bits. Dos pasadas con semillas distintas para juntar los
+  // ~40 bits que necesitan 8 caracteres del alfabeto.
+  const fnv = (str, seed) => {
+    let hash = seed >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash >>> 0;
+  };
 
-  // 4 chars derivados del reloj (no se repiten entre milisegundos)
-  let t = Date.now(), stamp = '';
-  for (let i = 0; i < 4; i++) { stamp = ALPHABET[t % ALPHABET.length] + stamp; t = Math.floor(t / ALPHABET.length); }
+  const key = (giveawayId || '') + '|' + String(email).trim().toLowerCase();
+  let n = BigInt(fnv(key, 0x811c9dc5)) * 4294967296n + BigInt(fnv(key, 0x9e3779b9));
 
-  return 'TL-' + stamp + '-' + pick(4);
+  const base = BigInt(ALPHABET.length);
+  let out = '';
+  for (let i = 0; i < 8; i++) { out = ALPHABET[Number(n % base)] + out; n /= base; }
+
+  return 'TL-' + out.slice(0, 4) + '-' + out.slice(4);
 }
 
 /* ==================================================================
@@ -513,7 +527,7 @@ form.addEventListener('submit', async (e) => {
 
   btn.disabled = true;
 
-  const code = makeEntryCode();
+  const code = makeEntryCode(email, GIVEAWAY.id);
 
   const body = new URLSearchParams({
     name, email, role,
